@@ -7,6 +7,8 @@
  * @module
  */
 
+import type { CheatSheetEntry as SharedCheatSheetEntry } from "./types"
+
 /**
  * Cheat sheet category types for tmux command groupings.
  */
@@ -20,13 +22,13 @@ export type CheatSheetCategory =
 
 /**
  * Single cheat sheet entry for tmux commands.
+ *
+ * Contains the command, description, optional note,
+ * and category for grouping.
  */
-export interface CheatSheetEntry {
-  readonly id: string
+export interface CheatSheetEntry extends SharedCheatSheetEntry {
+  /** Category grouping for this entry */
   readonly category: CheatSheetCategory
-  readonly command: string
-  readonly description: string
-  readonly note?: string
 }
 
 /**
@@ -154,7 +156,7 @@ export const tmuxCheatSheet: readonly CheatSheetEntry[] = [
   {
     id: "panes-2",
     category: "PANES",
-    command: 'Ctrl+b "',
+    command: "Ctrl+b \"",
     description: "Split pane horizontally (top/bottom)",
     note: "",
   },
@@ -339,7 +341,7 @@ export const tmuxCheatSheet: readonly CheatSheetEntry[] = [
   {
     id: "config-5",
     category: "CONFIG",
-    command: 'bind r source-file ~/.tmux.conf \\; display "Reloaded!"',
+    command: "bind r source-file ~/.tmux.conf \\; display 'Reloaded!'",
     description: "Reload config with Ctrl+b r",
     note: "Add to .tmux.conf for quick reload",
   },
@@ -366,6 +368,19 @@ export const tmuxCheatSheet: readonly CheatSheetEntry[] = [
   },
 ] as const
 
+/**
+ * Get all unique categories from cheat sheet entries.
+ *
+ * Returns categories in a consistent order for UI display.
+ *
+ * @example
+ * ```ts
+ * import { getCategories } from "@/content/glossary/tmux"
+ *
+ * const categories = getCategories()
+ * // ["SESSIONS", "WINDOWS", "PANES", "NAVIGATION", "COPY_MODE", "CONFIG"]
+ * ```
+ */
 export function getCategories(): readonly CheatSheetCategory[] {
   const categoryOrder: readonly CheatSheetCategory[] = [
     "SESSIONS",
@@ -381,9 +396,25 @@ export function getCategories(): readonly CheatSheetCategory[] {
     categories.add(entry.category)
   }
 
+  // Return in defined order
   return categoryOrder.filter((cat) => categories.has(cat))
 }
 
+/**
+ * Filter cheat sheet entries by category.
+ *
+ * @param entries - The cheat sheet entries to filter
+ * @param category - The category to filter by
+ * @returns Entries matching the specified category
+ *
+ * @example
+ * ```ts
+ * import { filterByCategory, tmuxCheatSheet } from "@/content/glossary/tmux"
+ *
+ * const sessions = filterByCategory(tmuxCheatSheet, "SESSIONS")
+ * // Returns 7 entries from SESSIONS category
+ * ```
+ */
 export function filterByCategory(
   entries: readonly CheatSheetEntry[],
   category: CheatSheetCategory,
@@ -391,6 +422,27 @@ export function filterByCategory(
   return entries.filter((entry) => entry.category === category)
 }
 
+/**
+ * Search cheat sheet entries by query string.
+ *
+ * Searches across command, description, and note fields.
+ * Case-insensitive partial matching.
+ *
+ * @param entries - The cheat sheet entries to search
+ * @param query - The search query string
+ * @returns Entries matching the search query
+ *
+ * @example
+ * ```ts
+ * import { searchEntries, tmuxCheatSheet } from "@/content/glossary/tmux"
+ *
+ * const results = searchEntries(tmuxCheatSheet, "session")
+ * // Returns entries containing "session" in any field
+ *
+ * const empty = searchEntries(tmuxCheatSheet, "zzzzzzz")
+ * // Returns empty array (no matches)
+ * ```
+ */
 export function searchEntries(
   entries: readonly CheatSheetEntry[],
   query: string,
